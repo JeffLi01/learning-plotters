@@ -2249,6 +2249,7 @@ name = "learning-plotters"
 version = "0.1.0"
 dependencies = [
  "plotters",
+ "rgb",
  "slint",
 ]
 

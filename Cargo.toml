@@ -7,4 +7,5 @@ edition = "2021"
 
 [dependencies]
 plotters = "0.3.5"
+rgb = "0.8.37"
 slint = "1.3.2"
