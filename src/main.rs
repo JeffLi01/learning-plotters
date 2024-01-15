@@ -1,4 +1,7 @@
+use std::time::SystemTime;
+
 use plotters::{prelude::*, style::full_palette::{GREY_100, GREY_300, GREY_600}};
+use slint::SharedPixelBuffer;
 
 struct PlotStyle {
     bg: RGBColor,
@@ -24,15 +27,18 @@ fn do_plot() -> Result<(), Box<dyn std::error::Error>> {
     let (char_width, char_height): (u32, u32) = backend.estimate_text_size("C", &style)?;
     let (hex_width, _): (u32, u32) = backend.estimate_text_size("HH", &style)?;
     let (offset_width, _): (u32, u32) = backend.estimate_text_size("00000000", &style)?;
-    println!("offset_width: {}, hex_width: {}, char_width: {}", offset_width, hex_width, char_width);
+    // println!("offset_width: {}, hex_width: {}, char_width: {}", offset_width, hex_width, char_width);
     drop(backend);
     let hex_view_width = char_width * 16 + hex_width * 16 + char_width * 3;
     let char_view_width = char_width * 16;
     let img_width = offset_width + hex_view_width + char_view_width + char_width;
     let img_height = char_height * 32;
-    let mut backend = BitMapBackend::new("target/1.png", (img_width, img_height));
+
+    let mut pixel_buffer = SharedPixelBuffer::new(img_width, img_height);
+    let size = (pixel_buffer.width(), pixel_buffer.height());
+    let mut backend = BitMapBackend::with_buffer(pixel_buffer.make_mut_bytes(), size);
     let (width, height) = backend.get_size();
-    println!("request img size: {}x{}, result img size: {}x{}", img_width, img_height, width, height);
+    // println!("request img size: {}x{}, result img size: {}x{}", img_width, img_height, width, height);
 
     backend.draw_rect((0, 0), (width as i32, height as i32), &config.hex.bg, true)?;
     backend.draw_rect((0, 0), (offset_width as i32, height as i32), &config.offset.bg, true)?;
@@ -69,9 +75,15 @@ fn do_plot() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     backend.present()?;
+    drop(backend);
+    slint::Image::from_rgb8(pixel_buffer);
     Ok(())
 }
 
 fn main() {
-    do_plot().unwrap();
+    let instant = SystemTime::now();
+    for _ in 0..10000 {
+        do_plot().unwrap();
+    }
+    println!("plot 10 times in {} seconds", instant.elapsed().unwrap().as_secs_f32());
 }
